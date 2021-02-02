@@ -1,0 +1,61 @@
+{
+	"name": "changelog-to-html",
+	"version": "0.0.1",
+	"author": {
+		"name": "Eric Amodio",
+		"email": "eamodio@gmail.com"
+	},
+	"publisher": "eamodio",
+	"engines": {
+		"vscode": "^1.51.0"
+	},
+	"displayName": "Changelog to HTML",
+	"description": "Convert a Changelog to HTML",
+	"categories": [
+		"Other"
+	],
+	"homepage": "https://github.com/eamodio/vscode-changelog-to-html/blob/master/README.md",
+	"bugs": {
+		"url": "https://github.com/eamodio/vscode-changelog-to-html/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/eamodio/vscode-changelog-to-html"
+	},
+	"contributes": {
+		"commands": [
+			{
+				"command": "changelog-to-html.convert",
+				"title": "Convert to HTML",
+				"category": "Changelog"
+			}
+		]
+	},
+	"activationEvents": [
+		"onCommand:changelog-to-html.convert"
+	],
+	"main": "./dist/extension",
+	"scripts": {
+		"clean": "git clean -Xdf -e !node_modules -e !node_modules/**/*",
+		"compile": "tsc -p ./",
+		"lint": "eslint src/**/*.ts --fix",
+		"pack": "vsce package --yarn",
+		"pretty": "prettier --config .prettierrc --loglevel warn --write \"./**/*.{ts,md,json}\"",
+		"reset": "yarn run clean && yarn --frozen-lockfile",
+		"watch": "tsc -watch -p ./",
+		"vscode:prepublish": "yarn run reset && yarn run compile"
+	},
+	"devDependencies": {
+		"@types/node": "12.12.24",
+		"@types/vscode": "1.52.0",
+		"@typescript-eslint/eslint-plugin": "4.14.2",
+		"@typescript-eslint/parser": "4.14.2",
+		"eslint": "7.19.0",
+		"eslint-cli": "1.1.1",
+		"eslint-config-prettier": "7.2.0",
+		"eslint-plugin-import": "2.22.1",
+		"prettier": "2.2.1",
+		"typescript": "4.2.0-beta",
+		"vsce": "1.85.0"
+	}
+}
