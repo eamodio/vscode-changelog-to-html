@@ -3,5 +3,7 @@
 test/**
 src/**
 **/*.map
+.eslintignore
+.prettierignore
 .gitignore
 tsconfig.json
