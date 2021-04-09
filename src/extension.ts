@@ -28,11 +28,6 @@ async function convert() {
 	const document = await workspace.openTextDocument(uris[0]);
 	const changelog = document.getText();
 
-	type VersionQuickPickItem = QuickPickItem & {
-		version: { major: string; minor: string; patch: string };
-		start: number;
-		end: number;
-	};
 	const versions: VersionQuickPickItem[] = [];
 
 	let major;
@@ -53,16 +48,7 @@ async function convert() {
 			version.end = match.index;
 		}
 
-		version = {
-			label: `${major}.${minor}${patch ? `.${patch}` : ''}`,
-			version: {
-				major: major,
-				minor: minor,
-				patch: patch,
-			},
-			start: match.index,
-			end: -1,
-		};
+		version = new VersionQuickPickItem(major, minor, patch, match.index, -1);
 
 		versions.push(version);
 	} while (true);
@@ -81,15 +67,31 @@ async function convert() {
 	edit.insert(
 		untitled.uri,
 		new Position(count++, 0),
-		`<ul class="changelog__list" data-visibility="version" data-version="${pick.version.major}.${pick.version.minor}">`
+		`<ul class="changelog__list" data-visibility="version" data-version="${pick.format('majorMinor')}">`
+	);
+	edit.insert(untitled.uri, new Position(count++, 0), `\t<!-- #region ${pick.format()} -->`);
+	edit.insert(untitled.uri, new Position(count++, 0), '\n');
+	edit.insert(untitled.uri, new Position(count++, 0), '\n');
+	edit.insert(
+		untitled.uri,
+		new Position(count++, 0),
+		`\t<li id="${pick.format()}" class="changelog__list-item--version">`
 	);
 	edit.insert(
 		untitled.uri,
 		new Position(count++, 0),
-		`<!-- #region ${pick.version.major}.${pick.version.minor}${
-			pick.version.patch ? `.${pick.version.patch}` : ''
-		} -->`
+		`\t\t<div class="changelog__badge changelog__badge--version">${pick.format()}</div>`
 	);
+	const now = new Date();
+	edit.insert(
+		untitled.uri,
+		new Position(count++, 0),
+		`\t\t<div class="changelog__date">${now
+			.toLocaleString('default', { month: 'long' })
+			.toLocaleUpperCase()} &nbsp;${now.getFullYear()}</div>`
+	);
+	edit.insert(untitled.uri, new Position(count++, 0), '\t\t<div class="changelog__details"></div>');
+	edit.insert(untitled.uri, new Position(count++, 0), '\t</li>');
 	edit.insert(untitled.uri, new Position(count++, 0), '\n');
 	edit.insert(untitled.uri, new Position(count++, 0), '\n');
 
@@ -124,12 +126,12 @@ async function convert() {
 			edit.insert(
 				untitled.uri,
 				new Position(count++, 0),
-				`<li${indent.length !== 0 ? ' class="changelog__list-item--sub"' : ''}>`
+				`\t<li${indent.length !== 0 ? ' class="changelog__list-item--sub"' : ''}>`
 			);
 			edit.insert(
 				untitled.uri,
 				new Position(count++, 0),
-				`\t<div class="changelog__badge changelog__badge--${type}">${
+				`\t\t<div class="changelog__badge changelog__badge--${type}">${
 					indent.length === 0 ? typeToBadge.get(type) ?? 'NEW' : subtypeToBadge.get(type) ?? '+'
 				}</div>`
 			);
@@ -137,7 +139,7 @@ async function convert() {
 			edit.insert(
 				untitled.uri,
 				new Position(count++, 0),
-				'\t<div class="changelog__details changelog__details--list"></div>'
+				'\t\t<div class="changelog__details changelog__details--list"></div>'
 			);
 			edit.insert(untitled.uri, new Position(count++, 0), '</li>');
 		}
@@ -145,11 +147,32 @@ async function convert() {
 
 	edit.insert(untitled.uri, new Position(count++, 0), '\n');
 	edit.insert(untitled.uri, new Position(count++, 0), '\n');
-	edit.insert(untitled.uri, new Position(count++, 0), '<!-- #endregion -->');
+	edit.insert(untitled.uri, new Position(count++, 0), '\t<!-- #endregion -->');
 	edit.insert(untitled.uri, new Position(count++, 0), '</ul>');
 
 	await workspace.applyEdit(edit);
 
 	void (await window.showTextDocument(untitled));
 	await commands.executeCommand('editor.action.formatDocument');
+}
+
+class VersionQuickPickItem implements QuickPickItem {
+	constructor(
+		public readonly major: string,
+		public readonly minor: string,
+		public readonly patch: string | undefined,
+		public readonly start: number,
+		public end: number
+	) {}
+
+	get label(): string {
+		return this.format();
+	}
+
+	format(style: 'majorMinorPatch' | 'majorMinor' = 'majorMinorPatch'): string {
+		if (style === 'majorMinor') {
+			return `${this.major}.${this.minor}`;
+		}
+		return `${this.major}.${this.minor}${this.patch ? `.${this.patch}` : ''}`;
+	}
 }
